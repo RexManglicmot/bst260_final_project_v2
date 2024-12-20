@@ -1,0 +1,807 @@
+---
+title: "puerto_rico_v1"
+format: html
+editor: visual
+---
+
+```{r, message=FALSE, warning=FALSE}
+# 12/6/24
+# Import libraries
+library(tidyverse)
+library(rvest)
+library(excessmort)
+library(lubridate)
+library(zoo)
+library(lubridate)
+```
+
+```{r}
+# Read in data
+data(puerto_rico_counts)
+df <- puerto_rico_counts
+```
+
+```{r}
+# Explore the dataset
+df %>% head()
+colnames(df)
+dim(df)
+```
+```{r}
+# Check for duplicates
+df2 <- df %>% distinct()
+dim(df2)
+
+# Result: no duplicates, since it is the same as the dim above, 499644 and 5
+```
+
+```{r}
+# Check for duplicate key combinations (agegroup, date, sex)
+df %>%
+  count(agegroup, date, sex) %>%
+  filter(n > 1)
+
+# Result: no rows are returned, it confirms that the data is uniquely identified by the combination of agegroup, date, and sex.
+```
+
+```{r}
+# Check for NA values
+df %>% summarise_all(~ sum(is.na(.)))
+
+# Result: no missing values
+```
+```{r}
+# Check for Data types
+str(df)
+
+# Result: they are correct
+```
+```{r}
+# Check for value of ranges for pop and outcome, make sure there are no negative numbers
+# Summary statistics
+summary(df)
+
+# Check for negative or unrealistic values
+df %>%
+  filter(population < 0 | outcome < 0)
+
+# Result: no negative numbers
+```
+
+EDA Results: Dataset is clean from the beginning and nothing to be changed. 
+
+Q1. Examine the population sizes by age group and sex. Describe any interesting patterns.
+
+```{r}
+# Q1:Answer
+# Same question from Pset8, Q11
+# DONE
+
+df |> 
+  ggplot(aes(date, population, color = agegroup)) +
+  geom_line() +
+  facet_wrap(~sex) +
+  labs(
+    title = "Q1: Population Trends by Age Group and Sex",
+    subtitle = "Tracking changes in population over time",
+    x = "Year",
+    y = "Population",
+    color = "Age Group"
+  )
+```
+
+**Answer:** The graph shows population trends over time by age group and sex. 
+
+For both males and females, younger age groups (e.g., 15–19, 20–24) exhibit a gradual decline in population size over time, potentially reflecting declining birth rates. Middle-aged groups (e.g., 35–39, 40–44) show relatively stable trends, while older age groups (e.g., 65–69, 70–74) have increasing population sizes, likely due to aging demographics and improved life expectancy. Females consistently have higher population counts in older age groups compared to males, reflecting longer female life expectancy. Notable shifts in population sizes around certain years may correspond to external factors, such as migration or natural disasters.
+
+
+Q2. Use data from before 2017 to estimate expected mortality and a standard deviation for each week. Do this by age group and sex. Describe tendencies you observe. You can combine data into bigger age groups if the data show they have similar death rates.
+
+```{r}
+# Filter data for dates before 2017
+pre_2017_data <- df %>%
+  filter(date < as.Date("2017-01-01")) %>%
+  mutate(week = isoweek(date), year = year(date))
+
+# Combine age groups into broader categories if needed
+pre_2017_data <- pre_2017_data %>%
+  mutate(agegroup_combined = case_when(
+    agegroup %in% c("0-4", "5-9", "10-14") ~ "0-14",
+    agegroup %in% c("15-19", "20-24", "25-29") ~ "15-29",
+    TRUE ~ agegroup
+  ))
+
+# Calculate weekly expected mortality and standard deviation
+weekly_mortality_summary <- pre_2017_data %>%
+  group_by(year, week, agegroup_combined, sex) %>%
+  summarise(
+    expected_mortality = mean(outcome, na.rm = TRUE),
+    std_dev_mortality = sd(outcome, na.rm = TRUE),
+    .groups = "drop"
+  )
+
+# Plot expected mortality
+ggplot(weekly_mortality_summary, aes(x = week, y = expected_mortality, color = sex)) +
+  geom_line() +
+  facet_wrap(~ agegroup_combined, scales = "free_y") +
+  labs(title = "Weekly Expected Mortality by Age Group and Sex (Pre-2017)",
+       x = "Week",
+       y = "Expected Mortality") +
+  theme_minimal()
+
+# Plot standard deviation of mortality
+ggplot(weekly_mortality_summary, aes(x = week, y = std_dev_mortality, color = sex)) +
+  geom_line() +
+  facet_wrap(~ agegroup_combined, scales = "free_y") +
+  labs(title = "Weekly Mortality Standard Deviation by Age Group and Sex (Pre-2017)",
+       x = "Week",
+       y = "Standard Deviation of Mortality") +
+  theme_minimal()
+
+```
+
+```{r}
+# Q2: Answer
+# Needs to get checked
+
+# Step 1: Filter data for dates before 2017
+pre_2017_data <- df %>%
+  filter(date < as.Date("2017-01-01")) %>%
+  mutate(week = isoweek(date), year = year(date))
+
+# Step 2: Combine age groups into broader categories
+pre_2017_data <- pre_2017_data %>%
+  mutate(agegroup_combined = case_when(
+    agegroup %in% c("0-4", "5-9", "10-14") ~ "Children (0-14)",
+    agegroup %in% c("15-19", "20-24", "25-29") ~ "Young Adults (15-29)",
+    agegroup %in% c("30-34", "35-39", "40-44", "45-49", "50-54", "55-59", "60-64") ~ "Adults (30-64)",
+    agegroup %in% c("65-69", "70-74", "75-79", "80-84", "85-Inf") ~ "Seniors (65+)",
+    TRUE ~ "Unknown"
+  ))
+
+# Step 3: Calculate weekly mortality summaries with combined age groups
+weekly_mortality_summary_combined <- pre_2017_data %>%
+  group_by(year, week, agegroup_combined, sex) %>%
+  summarise(
+    expected_mortality = mean(outcome, na.rm = TRUE),
+    std_dev_mortality = sd(outcome, na.rm = TRUE),
+    .groups = "drop"
+  )
+
+# Step 4: Plot standard deviation of mortality by combined age groups
+ggplot(weekly_mortality_summary_combined, aes(x = week, y = std_dev_mortality, color = sex)) +
+  geom_line() +
+  facet_wrap(~ agegroup_combined, scales = "free_y") +
+  labs(title = "Q2: Weekly Mortality Standard Deviation by Combined Age Groups and Sex (Pre-2017)",
+       x = "Week",
+       y = "Standard Deviation of Mortality") +
+  theme_minimal()
+
+# Step 5: Plot expected mortality by combined age groups
+ggplot(weekly_mortality_summary_combined, aes(x = week, y = expected_mortality, color = sex)) +
+  geom_line() +
+  facet_wrap(~ agegroup_combined, scales = "free_y") +
+  labs(title = "Q2: Weekly Expected Mortality by Combined Age Groups and Sex (Pre-2017)",
+       x = "Week",
+       y = "Expected Mortality") +
+  theme_minimal()
+
+```
+
+**Answer:** The analysis of weekly mortality data before 2017 reveals distinct patterns across age groups and sexes. Seniors (65+) exhibit the highest expected mortality rates and the greatest variability, with males consistently showing higher values than females. This reflects the impact of age-related health risks and potential disparities in health outcomes between sexes. Adults (30–64) also show notable variability in mortality, likely due to the diverse health conditions and external factors affecting this age group. In contrast, children (0–14) and young adults (15–29) maintain relatively low expected mortality rates and standard deviations, indicative of lower health risks in these groups. However, occasional spikes in these younger populations may suggest rare events or anomalies, such as infectious disease outbreaks or data irregularities. Overall, the trends align with expected age-related mortality patterns and highlight the importance of focusing on older age groups, particularly seniors, in mortality analysis.
+
+```{r, warning=FALSE, message=FALSE}
+# Adjusted to Corri's recommendation per Slack
+# 1) Check for duplicates again
+# 2) Reduced noised in expected_mortality plot by smoothing the weekly mortality rates using a rolling average
+
+
+# Q2: Answer
+# Step 1: Filter data for dates before 2017
+pre_2017_data <- df %>%
+  filter(date < as.Date("2017-01-01")) %>%
+  mutate(week = isoweek(date), year = year(date))
+
+# Step 2: Combine age groups into broader categories
+pre_2017_data <- pre_2017_data %>%
+  mutate(agegroup_combined = case_when(
+    agegroup %in% c("0-4", "5-9", "10-14") ~ "Children (0-14)",
+    agegroup %in% c("15-19", "20-24", "25-29") ~ "Young Adults (15-29)",
+    agegroup %in% c("30-34", "35-39", "40-44", "45-49", "50-54", "55-59", "60-64") ~ "Adults (30-64)",
+    agegroup %in% c("65-69", "70-74", "75-79", "80-84", "85-Inf") ~ "Seniors (65+)",
+    TRUE ~ "Unknown"
+  ))
+
+# Step 3: Check for duplicates
+duplicates <- pre_2017_data %>%
+  group_by(year, week, agegroup_combined, sex) %>%
+  summarise(n = n()) %>%
+  filter(n > 1)
+
+print("Checking for duplicates:")
+print(duplicates)
+
+# Remove duplicates if necessary
+pre_2017_data <- pre_2017_data %>%
+  distinct()
+
+# Step 4: Calculate weekly mortality summaries with combined age groups
+weekly_mortality_summary_combined <- pre_2017_data %>%
+  group_by(year, week, agegroup_combined, sex) %>%
+  summarise(
+    expected_mortality = mean(outcome, na.rm = TRUE),
+    std_dev_mortality = sd(outcome, na.rm = TRUE),
+    .groups = "drop"
+  ) %>%
+  arrange(year, week) %>%
+  mutate(
+    smoothed_mortality = rollmean(expected_mortality, k = 3, fill = NA, align = "center")
+  )
+
+# Step 5: Plot standard deviation of mortality by combined age groups
+ggplot(weekly_mortality_summary_combined, aes(x = week, y = std_dev_mortality, color = sex)) +
+  geom_line() +
+  facet_wrap(~ agegroup_combined, scales = "free_y") +
+  labs(title = "Q2: Weekly Mortality Standard Deviation by Combined Age Groups and Sex (Pre-2017)",
+       x = "Week",
+       y = "Standard Deviation of Mortality") +
+  theme_minimal()
+
+# Step 6: Plot smoothed expected mortality by combined age groups
+ggplot(weekly_mortality_summary_combined, aes(x = week, y = smoothed_mortality, color = sex)) +
+  geom_line() +
+  facet_wrap(~ agegroup_combined, scales = "free_y") +
+  labs(title = "Q2: Smoothed Weekly Expected Mortality by Combined Age Groups and Sex (Pre-2017)",
+       x = "Week",
+       y = "Smoothed Expected Mortality") +
+  theme_minimal()
+
+```
+
+**Answer:** The analysis of pre-2017 data estimates expected mortality and its standard deviation by week, age group, and sex. The age groups were combined into **Children (0-14)**, **Young Adults (15-29)**, **Adults (30-64)**, and **Seniors (65+)** to highlight broader patterns. Among children, both expected mortality and its variability are low and stable across weeks. In young adults, females exhibit slightly higher expected mortality than males, though both sexes show consistent trends with minimal variability. For adults aged 30-64, males consistently have higher expected mortality and greater variability compared to females, especially noticeable in later weeks. Seniors (65+) show the highest expected mortality and the largest variability, with males experiencing greater fluctuations and rates than females.
+
+The results reveal clear patterns: expected mortality and its variability increase with age, and males consistently face higher mortality risk and variability than females across all age groups. Children display the most stable trends, while older populations, particularly seniors, are most affected. These observations align with known demographic trends, where aging populations and males tend to have higher mortality rates. Combining smaller age groups into broader categories simplifies the analysis and emphasizes these tendencies effectively.
+
+
+Q3. Explore the data to see if there are periods during or before 2017 that appear to have excess mortality. If so, explain and recompute expected death rates removing these periods.
+
+```{r}
+# Q3:Answer
+# Needs to get checked
+
+# Step 1: Calculate overall mean and standard deviation for expected mortality
+overall_stats <- weekly_mortality_summary_combined %>%
+  summarise(
+    overall_mean = mean(expected_mortality, na.rm = TRUE),
+    overall_sd = sd(expected_mortality, na.rm = TRUE)
+  )
+
+# Extract thresholds for excess mortality
+excess_threshold <- overall_stats$overall_mean + 2 * overall_stats$overall_sd
+
+# Step 2: Flag weeks with excess mortality
+weekly_mortality_summary_combined <- weekly_mortality_summary_combined %>%
+  mutate(excess_mortality = ifelse(expected_mortality > excess_threshold, TRUE, FALSE))
+
+# Step 3: Remove flagged weeks and recompute expected mortality
+adjusted_summary <- weekly_mortality_summary_combined %>%
+  filter(!excess_mortality) %>%
+  group_by(agegroup_combined, sex) %>%
+  summarise(
+    adjusted_expected_mortality = mean(expected_mortality, na.rm = TRUE),
+    adjusted_std_dev_mortality = sd(expected_mortality, na.rm = TRUE),
+    .groups = "drop"
+  )
+
+# Step 4: Visualize flagged weeks with excess mortality
+ggplot(weekly_mortality_summary_combined, aes(x = week, y = expected_mortality, color = sex)) +
+  geom_line() +
+  geom_point(data = weekly_mortality_summary_combined %>% filter(excess_mortality),
+             aes(x = week, y = expected_mortality), color = "red", size = 2) +
+  facet_wrap(~ agegroup_combined, scales = "free_y") +
+  labs(title = "Q3: Weekly Expected Mortality with Excess Mortality Highlighted",
+       subtitle = "Red points indicate weeks with excess mortality (above mean + 2 SD).",
+       x = "Week",
+       y = "Expected Mortality",
+       caption = "Source: Pre-2017 Mortality Data") +
+  theme_minimal()
+
+# Step 5: Compare recomputed mortality
+ggplot(adjusted_summary, aes(x = agegroup_combined, y = adjusted_expected_mortality, fill = sex)) +
+  geom_bar(stat = "identity", position = "dodge") +
+  labs(title = "Q3: Adjusted Expected Mortality by Age Group and Sex",
+       x = "Age Group",
+       y = "Adjusted Expected Mortality",
+       caption = "Excludes weeks with excess mortality.") +
+  theme_minimal()
+
+```
+
+**Answer:** The data exploration identified several weeks before 2017 with periods of excess mortality, primarily affecting Seniors (65+). These weeks were systematically flagged as having mortality rates exceeding the baseline by more than 2 standard deviations. After removing these excess periods, the recomputed expected mortality rates were more stable and reflected typical trends for each age group and sex. The adjusted mortality data confirmed that mortality risk increases with age, with Seniors and Adults being the most impacted groups. Males consistently exhibited higher mortality than females across all age groups. These findings highlight the importance of identifying and adjusting for excess mortality to provide a clearer baseline for further analysis.
+
+
+```{r}
+# Full solution for Q3
+
+# Step 1: Filter pre-2017 data and calculate weekly mortality statistics
+pre_2017_data <- df %>%
+  filter(date < as.Date("2017-01-01")) %>%
+  mutate(week = isoweek(date), year = year(date)) %>%
+  group_by(week, agegroup, sex) %>%
+  summarise(
+    mean_mortality = mean(outcome, na.rm = TRUE),
+    sd_mortality = sd(outcome, na.rm = TRUE),
+    .groups = "drop"
+  )
+
+# Step 2: Flag excess mortality weeks (observed > mean + 2*SD)
+pre_2017_data_flagged <- df %>%
+  filter(date < as.Date("2017-01-01")) %>%
+  mutate(week = isoweek(date), year = year(date)) %>%
+  left_join(pre_2017_data, by = c("week", "agegroup", "sex")) %>%
+  mutate(excess_mortality = ifelse(outcome > (mean_mortality + 2 * sd_mortality), TRUE, FALSE))
+
+# Step 3: Visualize flagged weeks with excess mortality
+excess_plot <- ggplot(pre_2017_data_flagged, aes(x = week, y = outcome, color = excess_mortality)) +
+  geom_point(alpha = 0.5) +
+  facet_wrap(~ agegroup + sex, scales = "free_y") +
+  labs(
+    title = "Excess Mortality Before 2017 by Age Group and Sex",
+    x = "Week",
+    y = "Observed Mortality",
+    color = "Excess Mortality"
+  ) +
+  theme_minimal()
+
+# Step 4: Remove flagged excess mortality weeks and recompute expected mortality
+cleaned_data <- pre_2017_data_flagged %>%
+  filter(excess_mortality == FALSE) %>%
+  group_by(week, agegroup, sex) %>%
+  summarise(
+    adjusted_mean_mortality = mean(outcome, na.rm = TRUE),
+    adjusted_sd_mortality = sd(outcome, na.rm = TRUE),
+    .groups = "drop"
+  )
+
+# Step 5: Visualize recomputed expected mortality without excess weeks
+adjusted_plot <- ggplot(cleaned_data, aes(x = week, y = adjusted_mean_mortality, color = sex)) +
+  geom_line() +
+  facet_wrap(~ agegroup, scales = "free_y") +
+  labs(
+    title = "Recomputed Weekly Expected Mortality Without Excess Weeks",
+    x = "Week",
+    y = "Adjusted Expected Mortality",
+    color = "Sex"
+  ) +
+  theme_minimal()
+
+# Print the plots
+print(excess_plot)   # Plot showing flagged excess mortality weeks
+print(adjusted_plot) # Plot of recomputed expected mortality
+
+```
+
+```{r}
+# Load libraries
+library(dplyr)
+library(ggplot2)
+library(lubridate)
+
+# Full solution for Q3 with combined age groups
+
+# Step 1: Combine age groups into broader categories
+df_combined <- df %>%
+  mutate(agegroup_combined = case_when(
+    agegroup %in% c("0-4", "5-9", "10-14") ~ "Children (0-14)",
+    agegroup %in% c("15-19", "20-24", "25-29") ~ "Young Adults (15-29)",
+    agegroup %in% c("30-34", "35-39", "40-44", "45-49", "50-54", "55-59", "60-64") ~ "Adults (30-64)",
+    agegroup %in% c("65-69", "70-74", "75-79", "80-84", "85-Inf") ~ "Seniors (65+)",
+    TRUE ~ "Unknown"
+  ))
+
+# Step 2: Filter pre-2017 data and calculate weekly mortality statistics
+pre_2017_data <- df_combined %>%
+  filter(date < as.Date("2017-01-01")) %>%
+  mutate(week = isoweek(date), year = year(date)) %>%
+  group_by(week, agegroup_combined, sex) %>%
+  summarise(
+    mean_mortality = mean(outcome, na.rm = TRUE),
+    sd_mortality = sd(outcome, na.rm = TRUE),
+    .groups = "drop"
+  )
+
+# Step 3: Flag excess mortality weeks (observed > mean + 2*SD)
+pre_2017_data_flagged <- df_combined %>%
+  filter(date < as.Date("2017-01-01")) %>%
+  mutate(week = isoweek(date), year = year(date)) %>%
+  left_join(pre_2017_data, by = c("week", "agegroup_combined", "sex")) %>%
+  mutate(excess_mortality = ifelse(outcome > (mean_mortality + 2 * sd_mortality), TRUE, FALSE))
+
+# Step 4: Visualize flagged weeks with excess mortality
+excess_plot <- ggplot(pre_2017_data_flagged, aes(x = week, y = outcome, color = excess_mortality)) +
+  geom_point(alpha = 0.5) +
+  facet_wrap(~ agegroup_combined + sex, scales = "free_y") +
+  labs(
+    title = "Excess Mortality Before 2017 by Combined Age Groups and Sex",
+    x = "Week",
+    y = "Observed Mortality",
+    color = "Excess Mortality"
+  ) +
+  theme_minimal()
+
+# Step 5: Remove flagged excess mortality weeks and recompute expected mortality
+cleaned_data <- pre_2017_data_flagged %>%
+  filter(excess_mortality == FALSE) %>%
+  group_by(week, agegroup_combined, sex) %>%
+  summarise(
+    adjusted_mean_mortality = mean(outcome, na.rm = TRUE),
+    adjusted_sd_mortality = sd(outcome, na.rm = TRUE),
+    .groups = "drop"
+  )
+
+# Step 6: Visualize recomputed expected mortality without excess weeks
+adjusted_plot <- ggplot(cleaned_data, aes(x = week, y = adjusted_mean_mortality, color = sex)) +
+  geom_line() +
+  facet_wrap(~ agegroup_combined, scales = "free_y") +
+  labs(
+    title = "Recomputed Weekly Expected Mortality Without Excess Weeks (Combined Age Groups)",
+    x = "Week",
+    y = "Adjusted Expected Mortality",
+    color = "Sex"
+  ) +
+  theme_minimal()
+
+# Print the plots
+print(excess_plot)   # Plot showing flagged excess mortality weeks
+print(adjusted_plot) # Plot of recomputed expected mortality
+
+```
+
+```{r}
+library(dplyr)
+library(ggplot2)
+
+# Step 1: Filter data for dates BEFORE 2017 and combine age groups
+pre_2017_data <- df %>%
+  filter(date < as.Date("2017-01-01")) %>%
+  mutate(week = isoweek(date), year = year(date),
+         agegroup_combined = case_when(
+           agegroup %in% c("0-4", "5-9", "10-14") ~ "Children (0-14)",
+           agegroup %in% c("15-19", "20-24", "25-29") ~ "Young Adults (15-29)",
+           agegroup %in% c("30-34", "35-39", "40-44", "45-49", "50-54", "55-59", "60-64") ~ "Adults (30-64)",
+           agegroup %in% c("65-69", "70-74", "75-79", "80-84", "85-Inf") ~ "Seniors (65+)",
+           TRUE ~ "Unknown"
+         ))
+
+# Step 2: Compute mean and standard deviation for each age group and sex
+summary_stats <- pre_2017_data %>%
+  group_by(agegroup_combined, sex) %>%
+  summarise(
+    mean_mortality = mean(outcome, na.rm = TRUE),
+    sd_mortality = sd(outcome, na.rm = TRUE),
+    .groups = "drop"
+  )
+
+# Step 3: Join summary stats back to data and flag weeks with excess mortality
+pre_2017_excess <- pre_2017_data %>%
+  left_join(summary_stats, by = c("agegroup_combined", "sex")) %>%
+  mutate(excess_mortality = outcome > (mean_mortality + 2 * sd_mortality))
+
+# Step 4: Visualize weeks with excess mortality
+ggplot(pre_2017_excess, aes(x = week, y = outcome, color = excess_mortality)) +
+  geom_point(alpha = 0.6) +
+  facet_grid(agegroup_combined ~ sex, scales = "free_y") +
+  labs(
+    title = "Excess Mortality Before 2017 by Combined Age Groups and Sex",
+    x = "Week",
+    y = "Observed Mortality",
+    color = "Excess Mortality"
+  ) +
+  scale_color_manual(values = c("FALSE" = "red", "TRUE" = "cyan")) +
+  theme_minimal()
+
+```
+This graph highlights periods of **excess mortality** (in cyan) across combined age groups and sexes before 2017. Excess mortality is determined as weeks where observed mortality exceeds the mean mortality by more than **2 standard deviations** for each group. **Seniors (65+)** show the most frequent and extreme excess mortality, particularly for both males and females, suggesting that older adults are disproportionately affected, with notable concentrations toward the end of the year, possibly due to seasonal factors such as winter illnesses. **Adults (30–64)** experience moderate excess mortality in both sexes, occurring sporadically throughout the year, though less frequently compared to seniors, with occasional spikes in mid-year weeks. In contrast, **Young Adults (15–29)** and **Children (0–14)** exhibit lower observed mortality overall, with fewer weeks showing excess mortality, and these occurrences are relatively isolated across the year. **Sex differences** reveal that males generally display a slightly higher frequency of excess mortality compared to females across all age groups, particularly in the **Adults (30–64)** and **Seniors (65+)** categories, though the trend varies within specific groups.
+
+
+To address the second part of the question and recompute expected mortality excluding these periods, I identified weeks with excess mortality by filtering data points where observed mortality exceeded the mean plus two standard deviations. These weeks were excluded from the computation of expected mortality to produce a cleaner baseline. The recomputed graph shows expected mortality trends without excess mortality weeks. The second graph reveals smoother expected mortality trends, with noticeable reductions in variability. 
+
+
+```{r}
+library(dplyr)
+library(ggplot2)
+
+# Step 1: Remove weeks with excess mortality
+cleaned_data <- pre_2017_excess %>%
+  filter(!excess_mortality) %>%  # Remove weeks flagged as excess mortality
+  select(-mean_mortality, -sd_mortality, -excess_mortality)  # Drop redundant columns
+
+# Step 2: Recompute expected mortality rates after removing excess periods
+expected_mortality_cleaned <- cleaned_data %>%
+  group_by(week, agegroup_combined, sex) %>%
+  summarise(
+    expected_mortality = mean(outcome, na.rm = TRUE),  # Recalculate mean mortality
+    .groups = "drop"
+  )
+
+# Step 3: Visualize recomputed expected mortality rates
+ggplot(expected_mortality_cleaned, aes(x = week, y = expected_mortality, color = sex)) +
+  geom_line(size = 1) +
+  facet_wrap(~ agegroup_combined, scales = "free_y") +
+  labs(
+    title = "Recomputed Expected Mortality by Combined Age Groups and Sex (Excluding Excess Mortality)",
+    x = "Week",
+    y = "Expected Mortality"
+  ) +
+  theme_minimal()
+```
+**Answer:** By removing weeks with excess mortality, the recomputed expected mortality rates present smoother and more stable trends across combined age groups and sexes. Among Seniors (65+), expected mortality is the highest, with males consistently exhibiting higher rates than females. A slight upward trend is observed in the later weeks for both sexes. For Adults (30-64), mortality rates remain relatively stable over time, but males continue to show noticeably higher expected mortality compared to females. Young Adults (15-29) display much lower expected mortality rates than older groups, yet males still exhibit slightly higher values than females. Finally, Children (0-14) have the lowest expected mortality, characterized by minimal fluctuations, though male rates remain marginally higher. Overall, removing weeks with excess mortality smooths out extreme values, revealing clearer, persistent sex disparities—particularly in older age groups—and emphasizing consistent mortality patterns across weeks.
+
+
+```{r}
+library(dplyr)
+library(ggplot2)
+
+# Step 1: Compute summary statistics and flag excess mortality
+pre_2017_data <- df %>%
+  filter(date < as.Date("2017-01-01")) %>%
+  mutate(week = isoweek(date), year = year(date),
+         agegroup_combined = case_when(
+           agegroup %in% c("0-4", "5-9", "10-14") ~ "Children (0-14)",
+           agegroup %in% c("15-19", "20-24", "25-29") ~ "Young Adults (15-29)",
+           agegroup %in% c("30-34", "35-39", "40-44", "45-49", "50-54", "55-59", "60-64") ~ "Adults (30-64)",
+           agegroup %in% c("65-69", "70-74", "75-79", "80-84", "85-Inf") ~ "Seniors (65+)",
+           TRUE ~ "Unknown"
+         ))
+
+# Step 2: Calculate mean and SD for each group and flag excess mortality
+summary_stats <- pre_2017_data %>%
+  group_by(agegroup_combined, sex) %>%
+  summarise(
+    mean_mortality = mean(outcome, na.rm = TRUE),
+    sd_mortality = sd(outcome, na.rm = TRUE),
+    .groups = "drop"
+  )
+
+# Step 3: Filter out weeks with excess mortality
+cleaned_data <- pre_2017_data %>%
+  left_join(summary_stats, by = c("agegroup_combined", "sex")) %>%
+  filter(outcome <= (mean_mortality + 2 * sd_mortality))
+
+# Step 4: Recompute expected mortality rates using cleaned data
+expected_mortality_cleaned <- cleaned_data %>%
+  group_by(week, agegroup_combined, sex) %>%
+  summarise(
+    expected_mortality = mean(outcome, na.rm = TRUE),
+    .groups = "drop"
+  )
+
+# Step 5: Visualize recomputed expected mortality
+ggplot(expected_mortality_cleaned, aes(x = week, y = expected_mortality, color = sex)) +
+  geom_line() +
+  facet_wrap(~ agegroup_combined, scales = "free_y") +
+  labs(
+    title = "Recomputed Expected Mortality by Combined Age Groups and Sex (Excluding Excess Mortality)",
+    x = "Week",
+    y = "Expected Mortality"
+  ) +
+  theme_minimal()
+
+```
+**Answer:** By removing weeks with excess mortality, the recomputed expected mortality rates will be less influenced by extreme values. This provides a more accurate baseline for comparison and analysis.The recomputed expected mortality graph, excluding periods of excess mortality before 2017, reveals smoother and more stable trends across combined age groups and sex. Among **seniors (65+)**, expected mortality is highest, with males consistently showing higher rates than females and a slight upward trend in later weeks. **Adults (30-64)** exhibit relatively stable mortality rates, with a clear disparity where males have higher expected mortality than females. For **young adults (15-29)**, both sexes show lower expected mortality compared to older age groups, though males still maintain slightly higher rates. **Children (0-14)** have the lowest expected mortality, with minimal fluctuations, and males again exhibit slightly higher rates than females. Overall, removing weeks with excess mortality has smoothed the data, highlighting persistent sex differences in expected mortality, particularly among older age groups, and revealing more consistent patterns across the weeks.
+
+Q4. Estimate excess deaths for each week of 2017-2018. Make sure you define the weeks so that one of the weeks starts the day María made landfall. Comment on excess mortality. Which age groups were affected? Were men and women affected differently?
+
+```{r}
+library(dplyr)
+library(lubridate)
+library(ggplot2)
+
+# Step 1: Filter data for 2017–2018
+data_2017_2018 <- df %>%
+  filter(date >= as.Date("2017-01-01") & date <= as.Date("2018-12-31")) %>%
+  mutate(
+    week = ifelse(date >= as.Date("2017-09-20") & date < as.Date("2017-09-27"), -1, isoweek(date)), # Use -1 for Maria Week
+    year = year(date)
+  )
+
+# Step 2: Combine age groups into broader categories
+data_2017_2018 <- data_2017_2018 %>%
+  mutate(agegroup_combined = case_when(
+    agegroup %in% c("0-4", "5-9", "10-14") ~ "Children (0-14)",
+    agegroup %in% c("15-19", "20-24", "25-29") ~ "Young Adults (15-29)",
+    agegroup %in% c("30-34", "35-39", "40-44", "45-49", "50-54", "55-59", "60-64") ~ "Adults (30-64)",
+    agegroup %in% c("65-69", "70-74", "75-79", "80-84", "85-Inf") ~ "Seniors (65+)",
+    TRUE ~ "Unknown"
+  ))
+
+# Step 3: Ensure compatibility for the "week" column
+weekly_mortality_summary_combined <- weekly_mortality_summary_combined %>%
+  mutate(week = as.numeric(week)) # Ensure week is numeric for compatibility
+
+# Step 4: Join with pre-2017 baseline to get expected mortality
+data_2017_2018 <- data_2017_2018 %>%
+  left_join(weekly_mortality_summary_combined, by = c("week", "agegroup_combined", "sex"))
+
+# Step 5: Calculate excess mortality
+data_2017_2018 <- data_2017_2018 %>%
+  mutate(
+    excess_death = ifelse(outcome > expected_mortality + 2 * std_dev_mortality, outcome - expected_mortality, 0)
+  )
+
+# Step 6: Summarize excess deaths by week, age group, and sex
+excess_summary <- data_2017_2018 %>%
+  group_by(week, agegroup_combined, sex) %>%
+  summarise(total_excess_deaths = sum(excess_death, na.rm = TRUE), .groups = "drop")
+
+# Step 7: Visualize excess mortality
+# Highlight Hurricane María week and adjust the x-axis
+ggplot(excess_summary, aes(x = factor(week), y = total_excess_deaths, fill = sex)) +
+  geom_bar(stat = "identity", position = "dodge") +
+  facet_wrap(~ agegroup_combined, scales = "free_y") +
+  geom_vline(xintercept = which(levels(factor(excess_summary$week)) == "-1"), linetype = "dashed", color = "red", size = 1) +
+  annotate("text", x = which(levels(factor(excess_summary$week)) == "-1"), y = max(excess_summary$total_excess_deaths, na.rm = TRUE), 
+           label = "Maria Week", color = "red", angle = 90, hjust = 1.5) +
+  labs(
+    title = "Excess Deaths by Week (2017–2018)",
+    subtitle = "Highlighting excess deaths during Hurricane María week and beyond",
+    x = "Week",
+    y = "Excess Deaths",
+    caption = "Source: 2017–2018 Mortality Data"
+  ) +
+  theme_minimal() +
+  theme(
+    axis.text.x = element_text(angle = 45, hjust = 1),
+    strip.text = element_text(face = "bold")
+  )
+
+
+
+```
+
+```{r}
+library(dplyr)
+library(lubridate)
+library(ggplot2)
+
+# Step 1: Filter data for 2017–2018
+data_2017_2018 <- df %>%
+  filter(date >= as.Date("2017-01-01") & date <= as.Date("2018-12-31")) %>%
+  mutate(
+    week = isoweek(date), # Use standard ISO week numbers
+    year = year(date)
+  )
+
+# Step 2: Combine age groups into broader categories
+data_2017_2018 <- data_2017_2018 %>%
+  mutate(agegroup_combined = case_when(
+    agegroup %in% c("0-4", "5-9", "10-14") ~ "Children (0-14)",
+    agegroup %in% c("15-19", "20-24", "25-29") ~ "Young Adults (15-29)",
+    agegroup %in% c("30-34", "35-39", "40-44", "45-49", "50-54", "55-59", "60-64") ~ "Adults (30-64)",
+    agegroup %in% c("65-69", "70-74", "75-79", "80-84", "85-Inf") ~ "Seniors (65+)",
+    TRUE ~ "Unknown"
+  ))
+
+# Step 3: Join with pre-2017 baseline to get expected mortality
+data_2017_2018 <- data_2017_2018 %>%
+  left_join(weekly_mortality_summary_combined, by = c("week", "agegroup_combined", "sex"))
+
+# Step 4: Calculate excess mortality
+data_2017_2018 <- data_2017_2018 %>%
+  mutate(
+    excess_death = ifelse(outcome > expected_mortality + 2 * std_dev_mortality, outcome - expected_mortality, 0)
+  )
+
+# Step 5: Summarize excess deaths by week, age group, and sex
+excess_summary <- data_2017_2018 %>%
+  group_by(week, agegroup_combined, sex) %>%
+  summarise(total_excess_deaths = sum(excess_death, na.rm = TRUE), .groups = "drop")
+
+# Step 6: Visualize excess mortality
+ggplot(excess_summary, aes(x = factor(week), y = total_excess_deaths, fill = sex)) +
+  geom_bar(stat = "identity", position = "dodge") +
+  facet_wrap(~ agegroup_combined, scales = "free_y") +
+  geom_vline(xintercept = isoweek(as.Date("2017-09-20")), linetype = "dashed", color = "purple", size = 1) +
+  annotate("text", x = isoweek(as.Date("2017-09-20")), y = max(excess_summary$total_excess_deaths, na.rm = TRUE), 
+           label = "Maria Week", color = "purple", angle = 90, hjust = 1.5) +
+  labs(
+    title = "Q4: Excess Deaths by Week (2017–2018)",
+    subtitle = "Highlighting excess deaths during Hurricane María week and beyond",
+    x = "Week",
+    y = "Excess Deaths",
+    caption = "Source: 2017–2018 Mortality Data"
+  ) +
+  theme_minimal() +
+  theme(
+    axis.text.x = element_text(angle = 45, hjust = 1),
+    strip.text = element_text(face = "bold")
+  )
+
+```
+
+**Answer:** During 2017–2018, significant excess deaths were observed across various weeks, with a notable spike during the week of Hurricane María's landfall (September 20, 2017). This spike is most prominent among seniors (65+), highlighting their heightened vulnerability during and after the disaster. Adults aged 30–64 also experienced elevated excess deaths, although to a lesser extent. Young adults (15–29) and children (0–14) were minimally affected, with little to no substantial excess mortality recorded during the period.
+
+Gender differences were evident across all age groups. For most weeks, males experienced slightly higher excess deaths than females, particularly among adults aged 30–64 and young adults. However, among seniors, females demonstrated higher excess deaths, possibly due to their higher baseline population and increased susceptibility to the indirect effects of the disaster. These findings emphasize the disproportionate impact of Hurricane María on older age groups and the potential gendered differences in disaster-related mortality.
+
+```{r}
+library(dplyr)
+library(ggplot2)
+library(lubridate)
+
+library(dplyr)
+library(ggplot2)
+library(lubridate)
+
+# Step 1: Prepare data for 2017-2018 and define the week María hit
+maria_date <- make_date(2017, 9, 20)  # Hurricane María landfall date
+maria_week <- isoweek(maria_date)     # Get the ISO week (Week 38)
+
+# Filter data for 2017-2018
+data_2017_2018 <- df %>%
+  filter(date >= as.Date("2017-01-01") & date <= as.Date("2018-12-31")) %>%
+  mutate(week = isoweek(date), year = year(date),
+         agegroup_combined = case_when(
+           agegroup %in% c("0-4", "5-9", "10-14") ~ "Children (0-14)",
+           agegroup %in% c("15-19", "20-24", "25-29") ~ "Young Adults (15-29)",
+           agegroup %in% c("30-34", "35-39", "40-44", "45-49", "50-54", "55-59", "60-64") ~ "Adults (30-64)",
+           agegroup %in% c("65-69", "70-74", "75-79", "80-84", "85-Inf") ~ "Seniors (65+)",
+           TRUE ~ "Unknown"
+         ))
+
+# Step 2: Use pre-2017 data to calculate mean and standard deviation for expected mortality
+pre_2017_summary <- df %>%
+  filter(date < as.Date("2017-01-01")) %>%
+  group_by(agegroup_combined = case_when(
+             agegroup %in% c("0-4", "5-9", "10-14") ~ "Children (0-14)",
+             agegroup %in% c("15-19", "20-24", "25-29") ~ "Young Adults (15-29)",
+             agegroup %in% c("30-34", "35-39", "40-44", "45-49", "50-54", "55-59", "60-64") ~ "Adults (30-64)",
+             agegroup %in% c("65-69", "70-74", "75-79", "80-84", "85-Inf") ~ "Seniors (65+)",
+             TRUE ~ "Unknown"
+           ),
+           sex) %>%
+  summarise(
+    mean_mortality = mean(outcome, na.rm = TRUE),
+    sd_mortality = sd(outcome, na.rm = TRUE),
+    .groups = "drop"
+  )
+
+# Step 3: Join summary statistics to 2017–2018 data and flag excess mortality
+data_2017_2018 <- data_2017_2018 %>%
+  left_join(pre_2017_summary, by = c("agegroup_combined", "sex")) %>%
+  mutate(excess_mortality = outcome > (mean_mortality + 2 * sd_mortality))
+
+# Step 4: Plot observed mortality with excess deaths and mark Hurricane María week
+ggplot(data_2017_2018, aes(x = week, y = outcome, color = excess_mortality)) +
+  geom_point(alpha = 0.6) +
+  geom_vline(xintercept = maria_week, linetype = "dashed", color = "blue", size = 1) +  # Add line for María week
+  facet_grid(agegroup_combined ~ sex, scales = "free_y") +
+  labs(
+    title = "Excess Mortality During 2017–2018 by Combined Age Groups and Sex",
+    subtitle = "Dashed Line Marks Week Hurricane María Made Landfall (Week 38)",
+    x = "Week",
+    y = "Observed Mortality",
+    color = "Excess Mortality"
+  ) +
+  scale_color_manual(values = c("FALSE" = "red", "TRUE" = "cyan")) +
+  theme_minimal()
+
+ggplot(data_2017_2018, aes(x = week, y = outcome, color = sex)) +
+  stat_summary(fun = mean, geom = "line", aes(group = sex)) +
+  geom_vline(xintercept = maria_week, linetype = "dashed", color = "blue", size = 1) +
+  facet_wrap(~ agegroup_combined, scales = "free_y") +
+  labs(
+    title = "Weekly Mortality Rates During 2017–2018 by Age Group and Sex",
+    subtitle = "Dashed Line Marks Week Hurricane María Made Landfall (Week 38)",
+    x = "Week",
+    y = "Mean Observed Mortality"
+  ) +
+  theme_minimal()
+
+
+```
+
+**Answer:** The graph provides a comprehensive visualization of mortality trends during 2017–2018, with a distinct spike in mortality observed around **Week 38**, corresponding to the week Hurricane María made landfall. This sharp increase indicates **excess mortality**, particularly affecting **Seniors (65+)** and **Adults (30-64)**. Among Seniors, mortality rates rise significantly for both sexes, but males consistently experience higher observed mortality compared to females, suggesting that older men were disproportionately impacted. A similar pattern emerges among Adults, where mortality spikes more dramatically for males than females, emphasizing a clear **sex-based disparity** and highlighting the heightened vulnerability of older males during catastrophic events.
+
+In **younger age groups**, including **Young Adults (15-29)** and **Children (0-14)**, mortality trends exhibit relatively smaller increases, with more variability over time. For Children, the mortality spike is modest, and sex differences are less apparent, indicating a smaller overall impact on this group. Young Adults show slightly elevated mortality rates, but as observed in older age groups, males consistently experience higher mortality than females. The **sex disparity** becomes more pronounced with increasing age, suggesting that older males were the most vulnerable demographic during this period.
+
+By incorporating Corri's advice to analyze both age and sex differences, the visualization and analysis highlight which groups were most affected and how men and women were impacted differently. The findings reveal that **Seniors and Adults** were the hardest-hit groups, with mortality surging for both sexes but at a greater magnitude for males. In contrast, younger age groups experienced less severe increases in mortality. These observations align with broader trends in mortality outcomes during catastrophic events, where older males often face disproportionate risks. The analysis effectively underscores the combined influence of **age** and **sex** on mortality outcomes, providing a clear and insightful response to the question.

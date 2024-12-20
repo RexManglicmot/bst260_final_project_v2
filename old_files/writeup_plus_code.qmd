@@ -1,0 +1,525 @@
+---
+title: "BST260 Project: Excess Mortality"
+author: Rex Manglicmot
+format: pdf
+fig-cap-location: bottom
+---
+## Introduction
+
+Puerto Rico is a lustful island in the beautiful tropical Caribbean that encapsulates a rich cultural history that draws in millions of visitors annually. However, a critical public health concern lies beneath its beauty: examining and understanding excess mortality (the number of raw observed deaths minus modeled expected deaths). 
+
+Excess mortality is a beneficial public health measure because it requires minimal data, relying only on historical death records. Excess mortality avoids reliance on the accuracy of cause-of-death assignments on death certificates, making it more robust in contexts with limited diagnostic precision. Excess mortality allows for comparisons and contrast of trends across regions and time, showcasing a sweeping view of the overall impact of events like pandemics and natural disaster on populations.Excess mortality conveys key insights into the impacts of events such as unexpected natural disasters like typhoons and socioeconomic crises like consumer good limitations on the population health of Puerto Rican citizens. 
+
+Enumerating deaths beyond the expected from historical population data, researchers and government policy makers can assess societal disruptions and conjure action plans to alleviate future harm. 
+One of the most significant events in Puerto Rico's history was Hurricane María, a disastrous storm that ravaged the island in September 2017. This Category 4 hurricane caused remarkable destruction, disrupting electricity and health infrastructure, leaving many Puerto Rican citizens without access to basic services for months on end. Beyond its immediate physical toll, Hurricane María catalyzed a public health crisis, with its impact felt most acutely among vulnerable populations such as the elderly and individuals with pre-existing conditions and because the health hospitals were overwhelmed, these popualtions needed the most care. Thus, within the DS labs package, using the puerto_rico dataset provides not only a lucid picture of the hurricane’s immediate effects before and after, but also clears light on long-term vulnerabilities within  puerto rico  exacerbated by health systems (i.e., hospitals), delayed recovery efforts, and systemic inequalities on individuals.
+
+Therefore, this BST260 Intro to Data Science project aims to contribute to public health body of literature through a exhaustive study of excess mortality in Puerto Rico wiht respect to Hurricane María. The project's approach underscores the critical need for adaptive, resilient public health infrastructure that can effectively respond to unprecedented environmental challenges. Specifically, there are four main goals of this analysis are:
+
+1. Examine population sizes by age group and sex to identify demographic patterns and their implications for public health.
+2. Calculate expected mortality and standard deviations for each week before 2017, broken down by age group and sex, to establish baseline trends.
+3. Explore historical data for anomalies in mortality rates before 2017, removing periods of abnormal mortality to refine expected death rate calculations.
+4. Estimate excess deaths for each week of 2017–2018, particularly in the aftermath of Hurricane María, to assess its impact on different age groups and sexes.
+
+Through these four goals, this project seeks to unravel critical insights about the interplay between environmental disasters and public health in Puerto Rico. Further, the findings hope to shed light and contribute to  discussions on preparation and recovery strategies, thereby providing a blue print for improving Puerto Rico health systems’ responses to future crises in the event another natural disaster would occur in the not so distant future. 
+
+## Methods
+### Data Source and Collection
+
+The dataset used in this study, puerto_rico_counts, was obtained from the dslabs package and contains demographic and mortality data for Puerto Rico. puerto_rico_counts includes five key variables: age group (categorical representation of age groups), date (daily observation dates), sex (male or female), population (numeric values representing population estimates), and outcome (numeric values for mortality counts). puerto_rico_counts spans 1985 to 2022, providing a medium to investigate time series for mortality trends across the variables above. The date variable specifically represents daily observations, making it suitable for time series analysis and detecting trends, seasonal variations, or sudden spikes in mortality over nearly four decades.
+
+### Data Cleaning and Preprocessing
+
+The data cleaning process followed a systematic approach to ensure the puerto_rico_counts dataset answered the 4 four main objections and consisted of exploratory data analysis. First, an initial exploration of the dataset was performed by inspecting the structure, column names, and dimensions using functions such as head(), colnames(), and dim(). This step provided a preliminary understanding of the variables and confirmed the presence of five columns and 499,644 observations.
+
+Duplicate rows were checked and removed using the distinct() function. Since the dimensions of the dataset remained the same, it was confirmed that no duplicate rows existed. To validate key combinations (age group, date, and sex), a count was performed, and no duplicate key combinations were found, indicating that these variables uniquely identify the data.
+
+Next, missing values were assessed using a column-wise check with summarise_all(~sum(is.na(.))). The results showed no missing data in any of the variables. puerto_rico_counts data types were then verified using the str() function, ensuring proper formatting for each column: age group was a factor, date was in date format, and population and outcome were numeric. This validation step confirmed that the data types aligned with the expected structure of the dataset.
+
+The values in population and outcome were checked for logical consistency. Summary statistics for these columns were generated using the summary() function, and filtering methods were applied to detect negative or unrealistic values.
+
+### Analytical Techniques
+
+After cleaning and preprocessing, the dataset was used for time series analysis and demographic comparisons. The date variable was critical in tracking mortality trends over time and was transformed into years and weeks respective to the 4 main objectives. 
+
+Mortality counts (outcome) were evaluated based on population estimates to calculate mortality rates, enabling the identification of excess mortality across specific age groups and sexes. 
+
+Age groups based on similar mortality patterns were combined to better uncover the data for analyzing mortality trends over broader age ranges. For example, groups such as "0-4," "5-9," and "10-14" were merged into a single "0-14" category, while older groups like "60-64," "65-69," and "70-74" were aggregated into "60-74." 
+
+Visualizations were integral to analyzing the data's findings. For example, time series  and line plots were visualuzed to track mortality trends and seasonal variations among the age groups aforementioned. Additionally, faceted plots displayed subgroup-specific trends, allowing for side-by-side comparisons across age, sex, and time. 
+
+### Assumptions and Limitations
+
+One assumption in this project is that the Puerto Rico population and mortality counts provided in the data are accurate and complete. However, it is reasonable to think that not all data collection was complete. In times of natural disaster, data collection comes in second while care for the population becomes primary. 
+
+While the dataset captures daily mortality trends over an extensive period, it does not account for external factors, such as underlying public health concerns (e.g., access to quality water), which may also have influenced mortality rates. Additionally, aggregating age groups might smooth out significant variations within narrower age ranges and may not truly reflect this project's findings on the Puerto Rican population. 
+
+## Results
+### Q1
+
+![Population Trends by Age Group and Sex](Q1_Population_Trends.png){#fig-pop-trends}
+
+Figure 1 graph shows population trends over time by age group and sex. For both males and females, younger age groups (e.g., 15–19, 20–24) exhibit a gradual decline in population size over time. Middle-aged groups (e.g., 35–39, 40–44) show relatively stable trends, while older age groups (e.g., 65–69, 70–74) have increasing population sizes. Females consistently have higher population counts in older age groups compared to males.
+
+### Q2
+
+![](Q2_Weekly_Mortality.png){#fig-pop-trends}
+
+Figure 2 graph shows mortality trends by age and sex. Younger age groups (0-14, 15-19, 20-24) have low, stable mortality with minimal sex differences. In adults aged 25-59, mortality increases with age, and males consistently exhibit higher rates than females. For older adults (60-74), mortality rises further, with a widening male-female gap. Among seniors (75+), mortality is highest, though the gap narrows in the oldest group (85+) as female rates begin to align with male rates.
+
+Based on these trends, similar age groups can be combined for analysis. The 0-14 group consolidates ages 0-4, 5-9, and 10-14 due to their low and stable mortality. The 15-29 category combines 15-19, 20-24, and 25-29, as they share comparable mortality levels and minimal variability. Adults aged 30-59 (30-34 to 55-59) can be grouped together, reflecting a gradual but consistent increase in mortality. Similarly, ages 60-74 (60-64, 65-69, and 70-74) and Seniors aged 75+ (75-79, 80-84, and 85+) can be combined.
+
+![](Q2_Weekly_Mortality_2.png){#fig-pop-trends}
+
+Figure 3 shows expected mortality trends across combined age groups. Older groups (60–74, 75–79, 80–84, 85+) consistently have higher mortality rates, with males exhibiting notably higher values and more variability than females. In contrast, younger groups (0–14, 15–29) display significantly lower and more stable mortality, with minimal sex-based differences. Adults (30–59) show moderate mortality, where males maintain a steady upward trend compared to females.
+
+![](Q2_Weekly_Mortality_3.png){#fig-pop-trends}
+
+Figure 4 highlights the variability in mortality rates. Older age groups (75–79, 80–84, 85+) have the highest standard deviations, particularly among males, indicating significant fluctuations. The 60–74 group also shows notable variability, though less pronounced. Younger groups (0–14, 15–29) exhibit lower standard deviations, reflecting stability and minimal sex differences. In the 30–59 group, males consistently show greater variability than females.
+
+### Q3
+
+![](Q3_Weekly_Mortality.png){#fig-pop-trends}
+
+Figure 5 highlights weekly mortality trends by age group and sex before 2017, with red points marking excess mortality (values > mean + 2 SD). Excess mortality is more common in older age groups (60-74, 75-79, 80-84, 85+), where males consistently show higher mortality rates than females. Younger groups (0-14, 15-29) exhibit lower mortality with fewer anomalies.
+
+![](Q3_Weekly_Mortality_2.png){#fig-pop-trends}
+
+Figure 6 shows adjusted mortality trends after removing weeks with excess mortality. The trends are smoother, with males maintaining higher mortality rates, especially in older age groups (30-59, 60-74, 75+). Younger groups (0-14, 15-29) display stable, low mortality levels. The sharp decline at the end reflects incomplete data.
+
+### Q4
+
+![](Q4_Weekly_Mortality.png){#fig-pop-trends}
+
+Figure 7 highlights excess mortality during 2017–2018, with cyan points marking weeks where mortality exceeded the baseline (mean + 2 SD). The most affected age groups were older adults (60–74, 75–79, 80–84) and seniors (85+), where excess deaths were most pronounced after Week 38, corresponding to Hurricane María’s landfall.
+
+![](Q4_Weekly_Mortality_2.png){#fig-pop-trends}
+
+Figure 8 shows clear differences between men and women. In adults (30–59) and seniors (65+), males exhibited consistently higher mortality rates compared to females, especially during periods of excess mortality. However, in the 85+ age group, females experienced a sharper increase in mortality following Hurricane María, surpassing male rates. Children (0–14) and young adults (15–29) were the least affected, with minor deviations observed for both sexes. Older age groups, particularly males in mid-age and seniors, were disproportionately impacted by excess mortality, while the oldest females (85+) showed a unique spike post-María.
+
+## Discussion
+### Question Analyses
+
+The results from Q1 revealed clear patterns in older age groups, particularly 60-74, 75-79, 80-84, and 85+. It showed the highest mortality rates with a difference between sexes. For instance, males exhibited higher mortality than females across all groups, a gap that widened with age. However, younger groups like 0-14 and 15-29 displayed lower, more stable mortality rates. These two findings show natural expectations that mortality increases with age while emphasizing the greater vulnerability of older males.
+
+The results Q2 expanded on mortality variability by examining standard deviations. Older groups (without the age group 60-74), particularly 75-79, 80-84, and 85+, displayed the highest fluctuations, especially among males. This result suggests that older populations' mortality is higher and unpredictable, possibly due to external factors like seasonal illnesses or environmental stressors as their immune system wanes. The younger age groups, however,  in particular, 0-14 and 15-29, displayed lower SDs and minimal differences between the sexes (male and female). This discovery could be due to their mature and developed immune system and resilience to common diseases. Altogether, these findings highlight that both age and sex are factors influencing both mortality levels and their fluctuations.
+
+The identification of excess mortality in Q3, defined as mortality above mean + 2 SD revealed key periods of elevated mortality, primarily in older age groups. Excess mortality was more frequent in groups 60-74, 75-79, 80-84, and 85+, where both sexes experienced spikes, though males were consistently more affected. Younger age groups showed fewer anomalies, reflecting lower mortality overall. After removing these periods, adjusted trends (Figure 6) were smoother, with males continuing to show higher mortality rates, particularly in older groups. 
+
+Q4 analyzed mortality during 2017-2018, specifically around the week Hurricane María made landfall (Week 38, 2017). A sharp increase in mortality was observed in particular in older groups (60-74, 75-79, and 85+) in which males showed higher levels compared to females. Adults aged 30-59 also showed notable increases, though less pronounced. For younger groups, such as 0-14 and 15-29, mortality remained relatively stable with minimal deviations. The results again convey the uneven effect of Hurricane María on older populations and males. Thus, these findings suggest greater vulnerability to such populations in post-disaster conditions like natural disasters. 
+
+### Implications
+
+The findings collectively reveal the influence of age, sex, and external events on mortality. However, upon closer review, older age groups are consistently at higher risk, with males facing very high mortality across all analyses. This may be attributed to biological differences, lifestyle factors, or greater exposure to chronic conditions in their golden ages. Therefore, more societal policies and gerontology public health research are needed to monitor such vulnerable populations during periods of elevated risk, such as flu seasons or periods of natural disasters.
+
+Excess mortality analysis provides critical insights for identifying anomalies and understanding baseline trends. Removing outliers in Q3 unearthed the underlying yet prevalent mortality patterns in Puerto Rico's population. Again, mortality is higher for older people.
+
+### Limitations and Future Research
+
+While the analysis reveals significant trends, there are limitations. The dataset focuses on mortality but does not capture other contributing factors, such as socioeconomic conditions, healthcare access, or pre-existing comorbidities. The dataset contained only five variables, which is not a good way to elucidate mortality excess. 
+### Conclusion
+
+This BST260 project demonstrates the importance of data cleaning, visualizations, and interpretation analyses in understanding mortality trends in Puerto Rico. It helps identify periods and populations of excess mortality to create and modify public health strategies. Again, older age groups and males remain the most affected populations, particularly during events like Hurricane María. Active pursuance of solutions to these vulnerabilities in the elderly population through government conversations, public education institutions, and news media will be essential in mitigating future mortality spikes and protecting at-risk populations.
+
+
+```{r, message=FALSE, warning=FALSE, cache=FALSE}
+# 12/6/24
+# Import libraries
+library(tidyverse)
+library(rvest)
+library(excessmort)
+library(lubridate)
+library(zoo)
+library(lubridate)
+```
+
+```{r}
+# Read in data
+data(puerto_rico_counts)
+df <- puerto_rico_counts
+```
+
+```{r}
+# Explore the dataset
+df %>% head()
+colnames(df)
+dim(df)
+```
+```{r}
+# Check for duplicates
+df2 <- df %>% distinct()
+dim(df2)
+
+# Result: no duplicates, since it is the same as the dim above, 499644 and 5
+```
+
+```{r}
+# Check for duplicate key combinations (agegroup, date, sex)
+df %>%
+  count(agegroup, date, sex) %>%
+  filter(n > 1)
+
+# Result: no rows are returned, it confirms that the data is uniquely identified by the combination of agegroup, date, and sex.
+```
+
+```{r}
+# Check for NA values
+df %>% summarise_all(~ sum(is.na(.)))
+
+# Result: no missing values
+```
+```{r}
+# Check for Data types
+str(df)
+
+# Result: they are correct
+```
+```{r}
+# Check for value of ranges for pop and outcome, make sure there are no negative numbers
+# Summary statistics
+summary(df)
+
+# Check for negative or unrealistic values
+df %>%
+  filter(population < 0 | outcome < 0)
+
+# Result: no negative numbers
+```
+
+EDA Results: Dataset is clean from the beginning and nothing to be changed. 
+
+Q1. Examine the population sizes by age group and sex. Describe any interesting patterns.
+
+```{r}
+# Q1:Answer
+# Same question from Pset8, Q11
+# Referred to as Figure 1
+# DONE
+
+df %>% 
+  ggplot(aes(date, population, color = agegroup)) +
+  geom_line() +
+  facet_wrap(~sex) +
+  labs(
+    title = "Q1: Population Trends by Age Group and Sex",
+    subtitle = "Tracking changes in population over time",
+    x = "Year",
+    y = "Population",
+    color = "Age Group"
+  )
+
+# Load necessary library
+library(ggplot2)
+
+# Q1: Population Trends by Age Group and Sex
+df %>%
+  ggplot(aes(date, population, color = agegroup)) +
+  geom_line() +
+  facet_wrap(~sex) +
+  labs(
+    title = "Q1: Population Trends by Age Group and Sex",
+    subtitle = "Tracking changes in population over time",
+    x = "Year",
+    y = "Population",
+    color = "Age Group"
+  )
+
+# Save the plot
+ggsave("Q1_Population_Trends.png", width = 10, height = 7, dpi = 300)
+
+```
+
+**Answer:** The graph shows population trends over time by age group and sex. 
+
+The Figure 1 graph shows population trends over time by age group and sex. For both males and females, younger age groups (e.g., 15–19, 20–24) exhibit a gradual decline in population size over time. Middle-aged groups (e.g., 35–39, 40–44) show relatively stable trends, while older age groups (e.g., 65–69, 70–74) have increasing population sizes. Females consistently have higher population counts in older age groups compared to males.
+
+
+Q2. Use data from before 2017 to estimate expected mortality and a standard deviation for each week. Do this by age group and sex. Describe tendencies you observe. You can combine data into bigger age groups if the data show they have similar death rates.
+
+```{r}
+# Q2: Answer
+# DONE
+# Referred to as Figure 1
+
+# Filter data for dates before 2017
+pre_2017_data <- df %>%
+  filter(date < as.Date("2017-01-01")) %>%
+  mutate(week = isoweek(date), year = year(date))
+
+# Calculate weekly expected mortality and standard deviation by age group and sex
+weekly_mortality_summary <- pre_2017_data %>%
+  group_by(week, agegroup, sex) %>%
+  summarise(
+    expected_mortality = mean(outcome, na.rm = TRUE),
+    std_dev_mortality = sd(outcome, na.rm = TRUE),
+    .groups = "drop"
+  )
+
+# Plot expected mortality
+ggplot(weekly_mortality_summary, aes(x = week, y = expected_mortality, color = sex)) +
+  geom_line() +
+  facet_wrap(~ agegroup, scales = "free_y") +
+  labs(
+    title = "Q2 (Figure 1): Weekly Expected Mortality by Age Group and Sex (Pre-2017)",
+    x = "Week",
+    y = "Expected Mortality"
+  ) +
+  theme_minimal()
+
+# Save the plot
+ggsave("Q2_Weekly_Mortality.png", width = 10, height = 7, dpi = 300)
+```
+The graph shows mortality trends by age and sex. Younger age groups (0-14, 15-19, 20-24) have low, stable mortality with minimal sex differences. In adults aged 25-59, mortality increases with age, and males consistently exhibit higher rates than females. For older adults (60-74), mortality rises further, with a widening male-female gap. Among seniors (75+), mortality is highest, though the gap narrows in the oldest group (85+) as female rates begin to align with male rates.
+
+Based on these trends, similar age groups can be combined for analysis. The 0-14 group consolidates ages 0-4, 5-9, and 10-14 due to their low and stable mortality. The 15-29 category combines 15-19, 20-24, and 25-29, as they share comparable mortality levels and minimal variability. Adults aged 30-59 (30-34 to 55-59) can be grouped together, reflecting a gradual but consistent increase in mortality. Similarly, ages 60-74 (60-64, 65-69, and 70-74) display comparable trends and can be combined. Seniors aged 75+ (75-79, 80-84, and 85+) remain distinct due to their increasing mortality rates and higher variability, particularly among males.
+
+
+```{r}
+# Q2: ANswer
+# Referred to as Figure 3 and Figure4
+# DONE
+
+# Combine age groups based on similar mortality trends
+pre_2017_data <- pre_2017_data %>%
+  mutate(agegroup_combined = case_when(
+    agegroup %in% c("0-4", "5-9", "10-14") ~ "0-14",
+    agegroup %in% c("15-19", "20-24", "25-29") ~ "15-29",
+    agegroup %in% c("30-34", "35-39", "40-44", "45-49", "50-54", "55-59") ~ "30-59",
+    agegroup %in% c("60-64", "65-69", "70-74") ~ "60-74",
+    TRUE ~ agegroup  # Keep 75+ groups separate
+  ))
+
+# Recalculate weekly expected mortality and standard deviation
+weekly_mortality_summary <- pre_2017_data %>%
+  group_by(week, agegroup_combined, sex) %>%
+  summarise(
+    expected_mortality = mean(outcome, na.rm = TRUE),
+    std_dev_mortality = sd(outcome, na.rm = TRUE),
+    .groups = "drop"
+  )
+
+# Figure 3
+# Plot updated expected mortality
+ggplot(weekly_mortality_summary, aes(x = week, y = expected_mortality, color = sex)) +
+  geom_line() +
+  facet_wrap(~ agegroup_combined, scales = "free_y") +
+  labs(
+    title = "Q2 (Figure 3): Weekly Expected Mortality by Combined Age Groups and Sex (Pre-2017)",
+    x = "Week",
+    y = "Expected Mortality"
+  ) +
+  theme_minimal()
+
+# Save the plot
+ggsave("Q2_Weekly_Mortality_2.png", width = 10, height = 7, dpi = 300)
+
+# Figure 4
+# Plot updated standard deviation
+ggplot(weekly_mortality_summary, aes(x = week, y = std_dev_mortality, color = sex)) +
+  geom_line() +
+  facet_wrap(~ agegroup_combined, scales = "free_y") +
+  labs(
+    title = "Q2 (Figure 4): Weekly Mortality Standard Deviation by Combined Age Groups and Sex (Pre-2017)",
+    x = "Week",
+    y = "Standard Deviation of Mortality"
+  ) +
+  theme_minimal()
+
+# Save the plot
+ggsave("Q2_Weekly_Mortality_3.png", width = 10, height = 7, dpi = 300)
+```
+Figure 3 shows expected mortality trends across combined age groups. Older groups (60–74, 75–79, 80–84, 85+) consistently have higher mortality rates, with males exhibiting notably higher values and more variability than females. In contrast, younger groups (0–14, 15–29) display significantly lower and more stable mortality, with minimal sex-based differences. Adults (30–59) show moderate mortality, where males maintain a steady upward trend compared to females.
+
+Figure 4 highlights the variability in mortality rates. Older age groups (75–79, 80–84, 85+) have the highest standard deviations, particularly among males, indicating significant fluctuations. The 60–74 group also shows notable variability, though less pronounced. Younger groups (0–14, 15–29) exhibit lower standard deviations, reflecting stability and minimal sex differences. In the 30–59 group, males consistently show greater variability than females.
+
+
+Q3. Explore the data to see if there are periods during or before 2017 that appear to have excess mortality. If so, explain and recompute expected death rates removing these periods.
+
+```{r}
+# Q3: Answer
+# Referred to as Figure 5
+# DONE
+# Late late at night
+
+# Prepare Weekly Mortality Data
+weekly_mortality <- pre_2017_data %>%
+  mutate(year = year(date), week = week(date)) %>%
+  group_by(year, week, sex, agegroup_combined) %>%
+  summarise(weekly_mortality = sum(outcome, na.rm = TRUE), .groups = "drop")
+
+# Calculate Baseline Mean and Standard Deviation by Age Group and Sex
+baseline_stats <- weekly_mortality %>%
+  group_by(sex, agegroup_combined) %>%
+  summarise(
+    baseline_mean = mean(weekly_mortality, na.rm = TRUE),
+    baseline_sd = sd(weekly_mortality, na.rm = TRUE),
+    .groups = "drop"
+  )
+
+# Identify Weeks with Excess Mortality
+# Excess mortality is defined as weekly mortality > mean + 2 * SD
+weekly_mortality_excess <- weekly_mortality %>%
+  left_join(baseline_stats, by = c("sex", "agegroup_combined")) %>%
+  mutate(
+    excess_mortality = weekly_mortality > (baseline_mean + 2 * baseline_sd)
+  )
+
+# Plot Weekly Mortality with Excess Mortality Highlighted
+ggplot(weekly_mortality_excess, aes(x = week, y = weekly_mortality, color = sex)) +
+  geom_line(size = 0.7) +
+  geom_point(data = weekly_mortality_excess %>% filter(excess_mortality),
+             aes(x = week, y = weekly_mortality), color = "red", size = 2) +
+  facet_wrap(~ agegroup_combined, scales = "free_y", ncol = 4) +
+  labs(
+    title = "Q3 (Figure 5): Weekly Expected Mortality with Excess Mortality Highlighted",
+    subtitle = "Red points indicate weeks with excess mortality (above baseline mean + 2 SD).",
+    x = "Week",
+    y = "Weekly Mortality",
+    caption = "Source: Pre-2017 Mortality Data"
+  ) +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+
+# Save the plot
+ggsave("Q3_Weekly_Mortality.png", width = 10, height = 7, dpi = 300)
+
+# Summarize Weeks with Excess Mortality
+excess_summary <- weekly_mortality_excess %>%
+  filter(excess_mortality) %>%
+  group_by(year, sex, agegroup_combined) %>%
+  summarise(total_excess_weeks = n(), .groups = "drop")
+
+print(excess_summary)
+
+```
+Figure 5 highlights weekly mortality trends by age group and sex before 2017, with red points marking excess mortality (values > mean + 2 SD). Excess mortality is more common in older age groups (60-74, 75-79, 80-84, 85+), where males consistently show higher mortality rates than females. Younger groups (0-14, 15-29) exhibit lower mortality with fewer anomalies.
+
+```{r}
+# Q3: Answer
+# Referred to as Figure 6
+# DONE
+
+# Remove Weeks with Excess Mortality
+adjusted_data <- weekly_mortality_excess %>%
+  filter(!excess_mortality)  # Remove weeks with excess mortality
+
+# Recompute Expected Mortality by Week
+adjusted_weekly_mortality <- adjusted_data %>%
+  group_by(week, agegroup_combined, sex) %>%
+  summarise(
+    adjusted_expected_mortality = mean(weekly_mortality, na.rm = TRUE),
+    .groups = "drop"
+  )
+
+# Line Chart of Adjusted Expected Mortality
+ggplot(adjusted_weekly_mortality, aes(x = week, y = adjusted_expected_mortality, color = sex)) +
+  geom_line(size = 1) +
+  facet_wrap(~ agegroup_combined, scales = "free_y", ncol = 4) +
+  labs(
+    title = "Q3 (Figure 6): Adjusted Weekly Expected Mortality by Age Group and Sex",
+    subtitle = "Excludes periods with excess mortality (above mean + 2 SD)",
+    x = "Week",
+    y = "Adjusted Expected Mortality",
+    color = "Sex"
+  ) +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+
+# Save the plot
+ggsave("Q3_Weekly_Mortality_2.png", width = 10, height = 7, dpi = 300)
+```
+
+Figure 6 shows adjusted mortality trends after removing weeks with excess mortality. The trends are smoother, with males maintaining higher mortality rates, especially in older age groups (30-59, 60-74, 75+). Younger groups (0-14, 15-29) display stable, low mortality levels. The sharp decline at the end reflects incomplete data.
+
+Q4. Estimate excess deaths for each week of 2017-2018. Make sure you define the weeks so that one of the weeks starts the day María made landfall. Comment on excess mortality. Which age groups were affected? Were men and women affected differently?
+
+```{r}
+# Q4: Answer
+# Referred to as Figure 7 and Figure 8
+# DONE
+
+# Define Hurricane María Landfall Week
+maria_date <- make_date(2017, 9, 20)  # Hurricane María's landfall date
+maria_week <- isoweek(maria_date)     # Week 38 of 2017
+
+# Prepare 2017-2018 Data and Combine Age Groups
+data_2017_2018 <- df %>%
+  filter(date >= as.Date("2017-01-01") & date <= as.Date("2018-12-31")) %>%
+  mutate(
+    week = isoweek(date),
+    year = year(date),
+    agegroup_combined = case_when(
+      agegroup %in% c("0-4", "5-9", "10-14") ~ "0-14",
+      agegroup %in% c("15-19", "20-24", "25-29") ~ "15-29",
+      agegroup %in% c("30-34", "35-39", "40-44", "45-49", "50-54", "55-59") ~ "30-59",
+      agegroup %in% c("60-64", "65-69", "70-74") ~ "60-74",
+      agegroup %in% c("75-79") ~ "75-79",
+      agegroup %in% c("80-84") ~ "80-84",
+      agegroup %in% c("85-Inf") ~ "85+",
+      TRUE ~ "Unknown"
+    )
+  )
+
+# Use Pre-2017 Data to Compute Mean and Standard Deviation
+pre_2017_summary <- df %>%
+  filter(date < as.Date("2017-01-01")) %>%
+  group_by(agegroup_combined = case_when(
+      agegroup %in% c("0-4", "5-9", "10-14") ~ "0-14",
+      agegroup %in% c("15-19", "20-24", "25-29") ~ "15-29",
+      agegroup %in% c("30-34", "35-39", "40-44", "45-49", "50-54", "55-59") ~ "30-59",
+      agegroup %in% c("60-64", "65-69", "70-74") ~ "60-74",
+      agegroup %in% c("75-79") ~ "75-79",
+      agegroup %in% c("80-84") ~ "80-84",
+      agegroup %in% c("85-Inf") ~ "85+",
+      TRUE ~ "Unknown"
+    ),
+    sex
+  ) %>%
+  summarise(
+    mean_mortality = mean(outcome, na.rm = TRUE),
+    sd_mortality = sd(outcome, na.rm = TRUE),
+    .groups = "drop"
+  )
+
+# Join Summary Statistics and Flag Excess Mortality
+data_2017_2018 <- data_2017_2018 %>%
+  left_join(pre_2017_summary, by = c("agegroup_combined", "sex")) %>%
+  mutate(excess_mortality = outcome > (mean_mortality + 2 * sd_mortality))
+
+# Plot 1 - Highlight Excess Mortality Points
+ggplot(data_2017_2018, aes(x = week, y = outcome, color = excess_mortality)) +
+  geom_point(alpha = 0.6) +
+  geom_vline(xintercept = maria_week, linetype = "dashed", color = "blue", size = 1) +  
+  facet_wrap(agegroup_combined ~ sex, scales = "free_y") +
+  labs(
+    title = "Q4 (Figure 7): Excess Mortality During 2017–2018 by Age Groups and Sex",
+    subtitle = "Dashed Line Marks Week Hurricane María Made Landfall (Week 38)",
+    x = "Week",
+    y = "Observed Mortality",
+    color = "Excess Mortality"
+  ) +
+  scale_color_manual(values = c("FALSE" = "red", "TRUE" = "cyan")) +
+  theme_minimal()
+
+# Save the plot
+ggsave("Q4_Weekly_Mortality.png", width = 10, height = 7, dpi = 300)
+
+# Plot 2 - Mean Mortality with Highlighted María Week
+ggplot(data_2017_2018, aes(x = week, y = outcome, color = sex)) +
+  stat_summary(fun = mean, geom = "line", aes(group = sex)) +
+  geom_vline(xintercept = maria_week, linetype = "dashed", color = "blue", size = 1) +
+  facet_wrap(~ agegroup_combined, scales = "free_y") +
+  labs(
+    title = "Q4 (Figure 8): Weekly Mortality Rates During 2017–2018 by Age Group and Sex",
+    subtitle = "Dashed Line Marks Week Hurricane María Made Landfall (Week 38)",
+    x = "Week",
+    y = "Mean Observed Mortality"
+  ) +
+  theme_minimal()
+
+# Save the plot
+ggsave("Q4_Weekly_Mortality_2.png", width = 10, height = 7, dpi = 300)
+```
+Figure 7 highlights excess mortality during 2017–2018, with cyan points marking weeks where mortality exceeded the baseline (mean + 2 SD). The most affected age groups were older adults (60–74, 75–79, 80–84) and seniors (85+), where excess deaths were most pronounced after Week 38, corresponding to Hurricane María’s landfall.
+
+Figure 8 shows clear differences between men and women. In adults (30–59) and seniors (65+), males exhibited consistently higher mortality rates compared to females, especially during periods of excess mortality. However, in the 85+ age group, females experienced a sharper increase in mortality following Hurricane María, surpassing male rates. Children (0–14) and young adults (15–29) were the least affected, with minor deviations observed for both sexes. This analysis indicates that older age groups, particularly males in mid-age and seniors, were disproportionately impacted by excess mortality, while the oldest females (85+) showed a unique spike post-María.
+

@@ -1,0 +1,25 @@
+---
+title: "supplementary"
+format: html
+editor: source
+---
+
+### Q2: Initial review of the age groups and reasons to combine groups
+
+![](Q2_Weekly_Mortality.png){#fig-pop-trends}
+
+Figure above (in the supplementary directory) graph shows mortality trends by age and sex. Younger age groups (0-14, 15-19, 20-24) have low, stable mortality with minimal sex differences. In adults aged 25-59, mortality increases with age, and males consistently exhibit higher rates than females. For older adults (60-74), mortality rises further, with a widening male-female gap. Among seniors (75+), mortality is highest, though the gap narrows in the oldest group (85+) as female rates begin to align with male rates.
+
+Based on these trends, similar age groups can be combined for analysis. The 0-14 group consolidates ages 0-4, 5-9, and 10-14 due to their low and stable mortality. The 15-29 category combines 15-19, 20-24, and 25-29, as they share comparable mortality levels and minimal variability. Adults aged 30-59 (30-34 to 55-59) can be grouped together, reflecting a gradual but consistent increase in mortality. Similarly, ages 60-74 (60-64, 65-69, and 70-74) and Seniors aged 75+ (75-79, 80-84, and 85+) can be combined.
+
+### Q3
+![](Q3_Weekly_Mortality.png){#fig-pop-trends}
+
+Figure above highlights weekly mortality trends by age group and sex before 2017, with red points marking excess mortality (values > mean + 2 SD).  Excess mortality is more common in older age groups (60-74, 75-79, 80-84, 85+), where males consistently show higher mortality rates than females. Younger groups (0-14, 15-29) exhibit lower mortality with fewer anomalies.
+
+
+### Q4
+
+![](Q4_Weekly_Mortality.png){#fig-pop-trends}
+
+Figure above highlights excess mortality during 2017–2018, with cyan points marking weeks where mortality exceeded the baseline (mean + 2 SD). The most affected age groups were older adults (60–74, 75–79, 80–84) and seniors (85+), where excess deaths were most pronounced after Week 38, corresponding to Hurricane María’s landfall.
